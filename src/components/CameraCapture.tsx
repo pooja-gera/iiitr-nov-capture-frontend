@@ -1,22 +1,40 @@
 'use client'
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { Button } from "./ui/button"
+import { FlipHorizontal } from "lucide-react"
 
 export default function CameraCapture() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [image, setImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: facingMode 
+        } 
+      })
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream
       }
     } catch (err) {
       console.error("Error accessing camera:", err)
     }
+  }
+
+  const switchCamera = async () => {
+    // Stop current stream
+    stopCamera()
+    
+    // Toggle facing mode
+    setFacingMode(current => current === 'user' ? 'environment' : 'user')
+    
+    // Restart camera with new facing mode
+    await startCamera()
   }
 
   const captureImage = () => {
@@ -45,7 +63,7 @@ export default function CameraCapture() {
       setLoading(true)
       const position = await getCurrentPosition()
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/images`, {
+      const response = await fetch('YOUR_API_ENDPOINT', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,22 +91,32 @@ export default function CameraCapture() {
     })
   }
 
-  // Start camera when component mounts
-  useState(() => {
+  // Start camera when component mounts or facingMode changes
+  useEffect(() => {
     startCamera()
     return () => stopCamera()
-  })
+  }, [facingMode])
 
   return (
     <div className="flex flex-col items-center gap-4">
       {!image ? (
         <>
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className="w-full max-w-md rounded-lg"
-          />
+          <div className="relative w-full max-w-md">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full rounded-lg"
+            />
+            <Button 
+              size="icon"
+              variant="secondary"
+              className="absolute top-2 right-2 rounded-full"
+              onClick={switchCamera}
+            >
+              <FlipHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Button onClick={captureImage}>Capture</Button>
             <Button variant="outline">Cancel</Button>
