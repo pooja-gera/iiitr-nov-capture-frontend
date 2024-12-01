@@ -62,8 +62,7 @@ export default function CameraCapture() {
     try {
       setLoading(true)
       const position = await getCurrentPosition()
-      
-      const response = await fetch('YOUR_API_ENDPOINT', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
